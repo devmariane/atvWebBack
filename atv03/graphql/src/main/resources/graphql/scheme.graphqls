@@ -1,0 +1,86 @@
+type Query {
+  me: User
+  hero: Hero
+  droid(id: ID!): Droid
+  human(id: ID!): Human
+  starship(id: ID!): Starship
+  search(id: ID!): SearchResult
+  review(id: ID!): Review
+}
+
+type User {
+  name: String
+}
+
+type Hero {
+  id: ID!
+  name: String!
+  appearsIn: [String!]!
+}
+
+interface Character {
+  id: ID!
+  name: String!
+  appearsIn: [String!]!
+  friends: [Character!]!
+}
+
+type Droid implements Character {
+  id: ID!
+  name: String!
+  appearsIn: [String!]!
+  friends: [Character!]!
+  primaryFunction: String
+}
+
+type Review {
+  id: ID!
+  stars: Int!
+  commentary: String
+}
+
+input ReviewInput {
+  stars: Int!
+  commentary: String
+}
+
+type Human implements Character {
+  id: ID!
+  name: String!
+  appearsIn: [String!]!
+  friends: [Character!]!
+  height: Float
+}
+
+type Starship {
+  id: ID!
+  name: String!
+  length: Float
+}
+
+union SearchResult = Human | Droid | Starship
+
+input HumanInput {
+  name: String!
+  height: Float
+  appearsIn: [String!]
+}
+
+input DroidInput {
+  name: String!
+  primaryFunction: String
+  appearsIn: [String!]
+}
+
+input StarshipInput {
+  name: String!
+  length: Float
+}
+
+type Mutation {
+  createReview(review: ReviewInput!): Review
+  createHuman(input: HumanInput!): Human
+  createDroid(input: DroidInput!): Droid
+  createStarship(input: StarshipInput!): Starship
+  addFriend(characterId: ID!, friendId: ID!): Character
+}
