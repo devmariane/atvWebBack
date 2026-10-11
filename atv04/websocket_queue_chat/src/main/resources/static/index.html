@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Direct (User1 -> User2)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.5; }
+        .box { background: #f4f4f4; padding: 12px; border-radius: 5px; margin-bottom: 10px; width: 380px; }
+        input[type="text"] { width: 92%; padding: 6px; margin: 4px 0; }
+        button { padding: 6px 12px; background: #28a745; color: white; border: none; cursor: pointer; }
+        #chatLog { background: #fff; border: 1px solid #ccc; height: 180px; overflow-y: scroll; padding: 8px;
+    }
+    </style>
+</head>
+<body>
+    <h2>Chat Direct (User1 -> User2)</h2>
+    <div class="box">
+        <h3>1. Conectar</h3>
+        <input type="text" id="myUsername" placeholder="Seu Nome (ex: User1)">
+        <input type="text" id="serverIp" placeholder="IP do Servidor" value="localhost">
+        <button onclick="conectar()">Conectar ao Servidor</button>
+    </div>
+    <div class="box">
+        <h3>2. Enviar Mensagem</h3>
+        <input type="text" id="recipient" placeholder="Destinatário (ex: User2)">
+        <input type="text" id="message" placeholder="Digite a mensagem...">
+        <button onclick="enviar()">Enviar Mensagem</button>
+    </div>
+    <div class="box" style="width: 480px;">
+        <h3>Conversa</h3>
+        <div id="chatLog"></div>
+    </div>
+
+    <script>
+        let stompClient = null;
+
+        function conectar() {
+            const username = document.getElementById('myUsername').value.trim();
+            const ip = document.getElementById('serverIp').value.trim() || 'localhost';
+
+        if (!username) { alert("Digite seu nome!"); return; }
+
+        // Conecta passando o username na URL
+        const socket = new SockJS(`http://${ip}:8080/ws?username=${encodeURIComponent(username)}`);
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function () {
+            alert('Conectado com sucesso como: ' + username);
+            // Inscreve-se na própria fila privada de mensagens
+            stompClient.subscribe('/user/queue/private', function (payload) {
+                const msg = JSON.parse(payload.body);
+                const log = document.getElementById('chatLog');
+                    log.innerHTML += `<p><strong>${msg.sender} -> ${msg.recipient}:</strong> ${msg.content}</p
+                    >`;
+                    log.scrollTop = log.scrollHeight;
+                });
+            });
+        }
+        function enviar() {
+            const sender = document.getElementById('myUsername').value.trim();
+            const recipient = document.getElementById('recipient').value.trim();
+            const content = document.getElementById('message').value.trim();
+
+            if (!stompClient) { alert("Conecte-se primeiro!"); return; }
+            
+            const payload = { sender: sender, recipient: recipient, content: content };
+            // Envia para @MessageMapping("chat") -> /app/chat
+            stompClient.send("/app/chat", {}, JSON.stringify(payload));
+            document.getElementById('message').value = '';
+        }
+    </script>
+</body>
+</html>
+
